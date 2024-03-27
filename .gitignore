@@ -1,3 +1,1 @@
-#Игнорируем сертификаты
-playbook.yaml.save
-ssl-certificates/
+
