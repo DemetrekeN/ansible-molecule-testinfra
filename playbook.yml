@@ -13,6 +13,11 @@
       name: genadiy
       groups: www-data
 
+  - name: Update apt cache
+    apt:
+      update_cache: yes
+    become: yes
+
   - name: Install pkgs
     apt:
       pkg:
@@ -26,12 +31,11 @@
       dest: /etc/nginx/
       mode: 0644
 
-  - name: Move directory with site
-    synchronize:
+  - name: Copy directory with site
+    copy:
       src: files/site
       dest: /home/genadiy/practice/project-portfolio/portfolio
-      owner: true
-      group: true
+      mode: preserve
 
   - name: Change rule/owner of files
     file:
@@ -57,6 +61,8 @@
   - name: Create SSL certificate
     ansible.builtin.shell:
       cmd: certbot certonly --webroot -w /home/genadiy/practice/project-portfolio/portfolio --email root@rooted.onion --agree-tos --non-interactive -d torpeda.uberlegenheit.ru
+    tags:
+      - molecule-notest
 
   - name: Auto renew SSL certificates
     copy:
