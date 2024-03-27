@@ -1,0 +1,71 @@
+- name: Install nginx on Ubuntu
+  hosts: all
+#  gather_facts: yes
+#  gather_subset: [min, virtual]
+#  vars_files:
+#    - "vars/{{ server }}.yaml"
+#    - secrets/common.vault
+
+  tasks:
+  - name: Create user
+    user:
+      append: true
+      name: genadiy
+      groups: www-data
+
+  - name: Install pkgs
+    apt:
+      pkg:
+        - nginx
+        - certbot
+      force_apt_get: true
+
+  - name: Copy config files for nginx 
+    copy:
+      src: nginx/
+      dest: /etc/nginx/
+      mode: 0644
+
+  - name: Move directory with site
+    synchronize:
+      src: files/site
+      dest: /home/genadiy/practice/project-portfolio/portfolio
+      owner: true
+      group: true
+
+  - name: Change rule/owner of files
+    file:
+      path: /home/genadiy/practice/project-portfolio/portfolio
+      state: directory
+      owner: genadiy
+      group: www-data
+      mode: 0755
+
+  - name: Remove default symlink
+    file:
+      path: /etc/nginx/sites-enabled/default
+      state: absent
+
+  - name: Create symlink of configuration
+    file:
+      src: /etc/nginx/sites-available/gena
+      dest: /etc/nginx/sites-enabled/gena
+      group: root
+      owner: root
+      state: link
+
+  - name: Create SSL certificate
+    ansible.builtin.shell:
+      cmd: certbot certonly --webroot -w /home/genadiy/practice/project-portfolio/portfolio --email root@rooted.onion --agree-tos --non-interactive -d torpeda.uberlegenheit.ru
+
+  - name: Auto renew SSL certificates
+    copy:
+      src: files/certbot
+      dest: /etc/cron.d/
+
+  - name: Reload nginx for new confing
+    service:
+      name: nginx
+      state: reloaded
+
+#Нужны таски, которые предусматривают что SSL сертификатов сначала нет, а потом они есть (для идемпот.)
