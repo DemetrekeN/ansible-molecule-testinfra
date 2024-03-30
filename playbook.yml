@@ -20,6 +20,7 @@
     apt:
       update_cache: yes
     become: yes
+# сюда тег для отключения проверки на идемп в молекуле
 
   - name: Install pkgs
     apt:
@@ -30,17 +31,22 @@
 
   - name: Copy directory with site
     copy:
-      src: files/site
-      dest: /home/genadiy/practice/project-portfolio/portfolio
+      src: files/site/
+      dest: /home/genadiy/project-portfolio/
       mode: preserve
 
   - name: Change rule/owner of files
     file:
-      path: /home/genadiy/practice/project-portfolio/portfolio
+      path: /home/genadiy/project-portfolio/
       state: directory
       owner: genadiy
       group: www-data
-      mode: 0755
+#      mode: 0755
+
+  - name: Copy config files for nginx
+    copy:
+      src: nginx/confs/
+      dest: /etc/nginx/
 
   - name: Check is SSL certificates exists
     stat:
@@ -53,14 +59,14 @@
 
   - name: Copy nginx config without SSL
     copy:
-      src: nginx/gena_without_SSL/
-      dest: /etc/nginx/
+      src: nginx/sites-available/torpeda-80
+      dest: /etc/nginx/sites-available/torpeda
     when: not ssl_exist
 
   - name: Copy nginx config with SSL
     copy:
-      src: nginx/gena_with_SSL/
-      dest: /etc/nginx/
+      src: nginx/sites-available/torpeda-443
+      dest: /etc/nginx/sites-available/torpeda
     when: ssl_exist
 
   - name: Remove default symlink
@@ -70,8 +76,8 @@
 
   - name: Create symlink of config
     file:
-      src: /etc/nginx/sites-available/gena
-      dest: /etc/nginx/sites-enabled/gena
+      src: /etc/nginx/sites-available/torpeda
+      dest: /etc/nginx/sites-enabled/torpeda
       group: root
       owner: root
       state: link
@@ -83,9 +89,8 @@
 
   - name: Create SSL certificate if it's not exists
     shell:
-      cmd: certbot certonly --webroot -w /home/genadiy/practice/project-portfolio/portfolio --email root@rooted.onion --agree-tos --non-interactive -d torpeda.uberlegenheit.ru
-    tags:
-      - molecule-notest
+      cmd: certbot certonly --webroot -w /home/genadiy/project-portfolio/ --email root@rooted.onion --agree-tos --non-interactive -d {{ domain }}
+    tags: molecule-notest
 
   - name: Auto renew SSL certificates
     copy:
@@ -94,7 +99,7 @@
 
   - name: Copy nginx config with SSL after receiving certs
     copy:
-      src: nginx/gena_with_SSL/
-      dest: /etc/nginx/
+      src: nginx/sites-available/torpeda-443
+      dest: /etc/nginx/sites-available/torpeda
     notify: reload nginx
     when: not ssl_exist
