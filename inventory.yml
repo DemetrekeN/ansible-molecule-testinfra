@@ -4,7 +4,7 @@ all:
     servers:
       hosts:
         genadiy_new:
-          ansible_host: 178.130.132.59
+          ansible_host: nl.uberlegenheit.ru
           ansible_port: 2222
 #    group: будущее масштабирование
 #      hosts:
